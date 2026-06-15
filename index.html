@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ULTRA ENGINE Pro – Static Edition</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ダークモード時は文字色を白で強制 */
+    html.dark body {
+      color: white !important;
+      background-color: #0f172a !important;
+    }
+    .glass {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-white">
+
+  <!-- ヘッダー -->
+  <header class="p-4 text-center text-xl font-bold tracking-widest">
+    ULTRA ENGINE Pro – Static Edition
+  </header>
+
+  <!-- メインコンテナ -->
+  <main class="px-4 pb-32">
+
+    <!-- 条件設定パネル -->
+    <section class="glass p-4 rounded-xl mb-6">
+
+      <h2 class="font-bold mb-2">条件設定</h2>
+
+      <!-- 必須文字 -->
+      <div class="mb-4">
+        <label class="block text-sm mb-1">必須文字（例: ア=2 / ア:2 / 〇=7）</label>
+        <input id="requiredChars" type="text"
+               class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700">
+      </div>
+
+      <!-- 共役排除 / 集約 -->
+      <div class="flex gap-4 mb-4">
+        <label class="flex items-center gap-2">
+          <input id="excludeConjugation" type="checkbox">
+          <span>共役排除</span>
+        </label>
+
+        <label class="flex items-center gap-2">
+          <input id="mergeConjugation" type="checkbox">
+          <span>共役集約</span>
+        </label>
+      </div>
+
+      <!-- 文字数構成 -->
+      <div class="mb-4">
+        <label class="block text-sm mb-1">文字数構成</label>
+        <select id="lengthMode"
+                class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700">
+          <option value="free">自由</option>
+          <option value="strict">厳密</option>
+        </select>
+      </div>
+
+      <!-- exact_limit -->
+      <div class="mb-4">
+        <label class="block text-sm mb-1">exact_limit（返す語数）</label>
+        <input id="exactLimit" type="number" min="1"
+               class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700">
+      </div>
+
+      <!-- ひらがな→カタカナ -->
+      <label class="flex items-center gap-2 mb-4">
+        <input id="hiraganaToKatakana" type="checkbox">
+        <span>ひらがな → カタカナ変換</span>
+      </label>
+
+      <!-- 青＝必須単語 -->
+      <label class="flex items-center gap-2 mb-4">
+        <input id="blueIsRequired" type="checkbox">
+        <span>青＝必須単語扱い</span>
+      </label>
+
+      <!-- 遡り接続 / 牛耕 -->
+      <div class="flex gap-4 mb-4">
+        <label class="flex items-center gap-2">
+          <input id="backwardLink" type="checkbox">
+          <span>遡り接続</span>
+        </label>
+
+        <label class="flex items-center gap-2">
+          <input id="gyukou" type="checkbox">
+          <span>牛耕</span>
+        </label>
+      </div>
+
+      <!-- 1文字ループ拒否 -->
+      <label class="flex items-center gap-2 mb-4">
+        <input id="noSingleLoop" type="checkbox">
+        <span>1文字ループ拒否</span>
+      </label>
+
+      <!-- limit / timeout -->
+      <div class="flex gap-4 mb-4">
+        <div class="flex-1">
+          <label class="block text-sm mb-1">limit</label>
+          <input id="limit" type="number" min="1"
+                 class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700">
+        </div>
+
+        <div class="flex-1">
+          <label class="block text-sm mb-1">timeout(ms)</label>
+          <input id="timeout" type="number" min="100"
+                 class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700">
+        </div>
+      </div>
+
+      <!-- 実行ボタン -->
+      <button id="runEngine"
+              class="w-full py-3 rounded bg-blue-600 hover:bg-blue-700 font-bold tracking-widest">
+        RUN
+      </button>
+
+    </section>
+
+    <!-- 結果表示 -->
+    <section class="glass p-4 rounded-xl">
+      <h2 class="font-bold mb-2">結果</h2>
+      <div id="resultCount" class="text-sm opacity-70 mb-2">0 件</div>
+      <div id="resultArea" class="space-y-2"></div>
+    </section>
+
+  </main>
+
+  <!-- Dictionary Manager ボタン -->
+  <button type="button"
+          onclick="document.getElementById('dict-manager').classList.remove('hidden')"
+          class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.25em] opacity-80 hover:opacity-100">
+    Dictionary
+  </button>
+
+  <!-- Dictionary Manager -->
+  <div id="dict-manager"
+       class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center">
+    <div class="glass p-6 rounded-xl w-80">
+      <div class="text-right mb-4">
+        <button onclick="document.getElementById('dict-manager').classList.add('hidden')"
+                class="text-red-400 font-bold">CLOSE</button>
+      </div>
+
+      <h2 class="font-bold mb-4">辞書管理</h2>
+
+      <div class="flex gap-4 mb-4">
+        <button id="dictOpenAll"
+                class="flex-1 py-2 rounded bg-slate-700 hover:bg-slate-600">全開放</button>
+        <button id="dictCloseAll"
+                class="flex-1 py-2 rounded bg-red-700 hover:bg-red-600">全禁止</button>
+      </div>
+
+      <div id="dictList" class="max-h-64 overflow-y-auto text-sm"></div>
+    </div>
+  </div>
+
+  <!-- 🔥 静的サイト用：JS 読み込み（前回のまま） -->
+  <script src="dictionary.js"></script>
+  <script src="engine.js"></script>
+
+</body>
+</html>
