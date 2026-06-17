@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>国名しりとり補助ツール</title></title>
+<title>国名しりとり出題ツール</title>
 
 <style>
 body {
@@ -63,7 +63,7 @@ pre {
 </head>
 <body>
 
-<h2>開始字→終了字チェーン通り数集計</h2>
+<h2>国名しりとり出題ツール</h2>
 
 <div class="card">
 
@@ -189,56 +189,61 @@ function countChainsByStartEnd(list, N, startFilter) {
 // UI 実行
 // ===============================
 function runCount() {
-    const N = Number(document.getElementById("chainN").value);
-    const dictMode = document.getElementById("dictMode").value;
+    const resultBox = document.getElementById("result");
+    resultBox.textContent = "集計中…";   // ← ★ 追加
 
-    let startChar = document.getElementById("startChar").value.trim();
-    let endChar   = document.getElementById("endChar").value.trim();
+    setTimeout(() => {  // ← ★ UI を固まらせないために遅延実行
+        const N = Number(document.getElementById("chainN").value);
+        const dictMode = document.getElementById("dictMode").value;
 
-    if (startChar) startChar = hiraToKata(startChar);
-    if (endChar)   endChar   = hiraToKata(endChar);
+        let startChar = document.getElementById("startChar").value.trim();
+        let endChar   = document.getElementById("endChar").value.trim();
 
-    const zeroFilter = document.getElementById("zeroFilter").value;
-    const sortMode   = document.getElementById("sortMode").value;
+        if (startChar) startChar = hiraToKata(startChar);
+        if (endChar)   endChar   = hiraToKata(endChar);
 
-    let list = [];
-    if (dictMode === "country") list = window.DICT.country;
-    if (dictMode === "capital") list = window.DICT.capital;
-    if (dictMode === "both") list = [...window.DICT.country, ...window.DICT.capital];
+        const zeroFilter = document.getElementById("zeroFilter").value;
+        const sortMode   = document.getElementById("sortMode").value;
 
-    const res = countChainsByStartEnd(list, N, startChar || null);
+        let list = [];
+        if (dictMode === "country") list = window.DICT.country;
+        if (dictMode === "capital") list = window.DICT.capital;
+        if (dictMode === "both") list = [...window.DICT.country, ...window.DICT.capital];
 
-    let entries = Object.entries(res);
+        const res = countChainsByStartEnd(list, N, startChar || null);
 
-    // 終了字フィルタ
-    if (endChar) {
-        entries = entries.filter(([key, val]) => key.endsWith(endChar));
-    }
+        let entries = Object.entries(res);
 
-    // 0件フィルタ
-    if (zeroFilter === "exclude") {
-        entries = entries.filter(([k, v]) => v > 0);
-    } else if (zeroFilter === "only") {
-        entries = entries.filter(([k, v]) => v === 0);
-    }
+        // 終了字フィルタ
+        if (endChar) {
+            entries = entries.filter(([key, val]) => key.endsWith(endChar));
+        }
 
-    // ソート
-    if (sortMode === "gojuon") {
-        entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
-    } else if (sortMode === "asc") {
-        entries.sort((a, b) => a[1] - b[1]);
-    } else if (sortMode === "desc") {
-        entries.sort((a, b) => b[1] - a[1]);
-    } else if (sortMode === "random") {
-        entries.sort(() => Math.random() - 0.5);
-    }
+        // 0件フィルタ
+        if (zeroFilter === "exclude") {
+            entries = entries.filter(([k, v]) => v > 0);
+        } else if (zeroFilter === "only") {
+            entries = entries.filter(([k, v]) => v === 0);
+        }
 
-    let out = "";
-    for (const [key, val] of entries) {
-        out += `${key}　${val}通り\n`;
-    }
+        // ソート
+        if (sortMode === "gojuon") {
+            entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
+        } else if (sortMode === "asc") {
+            entries.sort((a, b) => a[1] - b[1]);
+        } else if (sortMode === "desc") {
+            entries.sort((a, b) => b[1] - a[1]);
+        } else if (sortMode === "random") {
+            entries.sort(() => Math.random() - 0.5);
+        }
 
-    document.getElementById("result").textContent = out || "該当なし";
+        let out = "";
+        for (const [key, val] of entries) {
+            out += `${key}　${val}通り\n`;
+        }
+
+        resultBox.textContent = out || "該当なし";
+    }, 50);
 }
 </script>
 
