@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>開始字→終了字チェーン集計ツール</title>
+<title>国名しりとり補助ツール</title></title>
 
 <style>
 body {
@@ -24,13 +24,26 @@ body {
 
 input, select {
     font-size: 18px;
-    padding: 8px;
-    width: 100%;
-    margin-top: 6px;
-    margin-bottom: 12px;
+    padding: 6px;
 }
 
-button {
+.numBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    border: none;
+    border-radius: 8px;
+    background: #007aff;
+    color: white;
+}
+
+.smallInput {
+    width: 60px;
+    text-align: center;
+    font-size: 20px;
+}
+
+button.mainBtn {
     width: 100%;
     padding: 14px;
     font-size: 20px;
@@ -53,35 +66,60 @@ pre {
 <h2>開始字→終了字チェーン通り数集計</h2>
 
 <div class="card">
-    <label>国数（N）</label>
-    <input id="chainN" type="number" value="3" min="2">
 
-    <label>辞書</label>
-    <select id="dictMode">
+    <!-- 国数 + 開始字 + 終了字 -->
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+
+        <div>
+            <label>国数</label><br>
+            <button onclick="decN()" class="numBtn">−</button>
+            <input id="chainN" type="number" value="3" min="1" class="smallInput">
+            <button onclick="incN()" class="numBtn">＋</button>
+        </div>
+
+        <div>
+            <label>開始字</label><br>
+            <input id="startChar" type="text" maxlength="1" class="smallInput">
+        </div>
+
+        <div>
+            <label>終了字</label><br>
+            <input id="endChar" type="text" maxlength="1" class="smallInput">
+        </div>
+
+    </div>
+
+    <br>
+
+    <label>辞書</label><br>
+    <select id="dictMode" style="width:100%;">
         <option value="country">国名</option>
         <option value="capital">首都</option>
         <option value="both">両方</option>
     </select>
 
-    <label>開始字（空欄なら全て）</label>
-    <input id="startChar" type="text" placeholder="例：ア">
+    <br><br>
 
-    <label>0件フィルタ</label>
-    <select id="zeroFilter">
+    <label>0件フィルタ</label><br>
+    <select id="zeroFilter" style="width:100%;">
         <option value="all">全て表示</option>
         <option value="exclude">0件を除外</option>
-        <option value="only">0件のみ表示</option>
+        <option value="only">0件のみ</option>
     </select>
 
-    <label>ソート順</label>
-    <select id="sortMode">
+    <br><br>
+
+    <label>ソート順</label><br>
+    <select id="sortMode" style="width:100%;">
         <option value="gojuon">50音順</option>
-        <option value="asc">通り数が少ない順</option>
-        <option value="desc">通り数が多い順</option>
+        <option value="asc">少ない順</option>
+        <option value="desc">多い順</option>
         <option value="random">ランダム</option>
     </select>
 
-    <button onclick="runCount()">集計する</button>
+    <br><br>
+
+    <button class="mainBtn" onclick="runCount()">集計する</button>
 </div>
 
 <div class="card">
@@ -92,7 +130,29 @@ pre {
 
 <script>
 // ===============================
-// Nカ国しりとりチェーンを集計
+// ひらがな → カタカナ
+// ===============================
+function hiraToKata(str) {
+    return str.replace(/[\u3041-\u3096]/g, ch =>
+        String.fromCharCode(ch.charCodeAt(0) + 0x60)
+    );
+}
+
+// ===============================
+// 国数 ± ボタン
+// ===============================
+function incN() {
+    const el = document.getElementById("chainN");
+    el.value = Number(el.value) + 1;
+}
+
+function decN() {
+    const el = document.getElementById("chainN");
+    if (Number(el.value) > 1) el.value = Number(el.value) - 1;
+}
+
+// ===============================
+// Nカ国しりとりチェーン集計
 // ===============================
 function countChainsByStartEnd(list, N, startFilter) {
     const result = {}; // "ア→イ": 数
@@ -131,9 +191,15 @@ function countChainsByStartEnd(list, N, startFilter) {
 function runCount() {
     const N = Number(document.getElementById("chainN").value);
     const dictMode = document.getElementById("dictMode").value;
-    const startChar = document.getElementById("startChar").value.trim();
+
+    let startChar = document.getElementById("startChar").value.trim();
+    let endChar   = document.getElementById("endChar").value.trim();
+
+    if (startChar) startChar = hiraToKata(startChar);
+    if (endChar)   endChar   = hiraToKata(endChar);
+
     const zeroFilter = document.getElementById("zeroFilter").value;
-    const sortMode = document.getElementById("sortMode").value;
+    const sortMode   = document.getElementById("sortMode").value;
 
     let list = [];
     if (dictMode === "country") list = window.DICT.country;
@@ -143,6 +209,11 @@ function runCount() {
     const res = countChainsByStartEnd(list, N, startChar || null);
 
     let entries = Object.entries(res);
+
+    // 終了字フィルタ
+    if (endChar) {
+        entries = entries.filter(([key, val]) => key.endsWith(endChar));
+    }
 
     // 0件フィルタ
     if (zeroFilter === "exclude") {
