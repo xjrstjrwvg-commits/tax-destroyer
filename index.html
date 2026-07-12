@@ -17,26 +17,54 @@ body {
     margin: auto;
 }
 
-/* カード */
-.card {
-    background: white;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+/* ============================
+   タブ UI
+============================ */
+#tabs {
+    display: flex;
+    border-bottom: 2px solid #007aff;
+    margin-bottom: 10px;
 }
 
-/* 入力 */
-input[type="text"], input[type="number"] {
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 20px;
+    background: #e5e5e5;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.2s;
+}
+
+.tab.active {
+    background: #007aff;
+    color: white;
+    font-weight: bold;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* ============================
+   共通UI
+============================ */
+input[type="text"], input[type="number"], select {
     width: 100%;
     font-size: 20px;
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #ccc;
     box-sizing: border-box;
+    margin-top: 10px;
 }
 
-/* チェックボックス */
 input[type="checkbox"] {
     width: 24px;
     height: 24px;
@@ -44,7 +72,6 @@ input[type="checkbox"] {
     margin-right: 6px;
 }
 
-/* ボタン */
 button {
     width: 100%;
     padding: 14px;
@@ -56,12 +83,12 @@ button {
     margin-top: 10px;
 }
 
-/* 辞書選択 */
 .dict-select {
     display: flex;
     gap: 10px;
     margin-top: 10px;
 }
+
 .dict-option {
     flex: 1;
     background: #f0f0f0;
@@ -70,52 +97,91 @@ button {
     text-align: center;
     border: 2px solid transparent;
 }
+
 .dict-option.selected {
     border-color: #007aff;
     background: #e8f0ff;
 }
 
-/* 結果 */
 pre {
     background: #fff;
     padding: 16px;
     border-radius: 8px;
     white-space: pre-wrap;
     border: 1px solid #ddd;
+    margin-top: 10px;
 }
 </style>
 </head>
 <body>
 
-<h2>国名スプリントシャウト・出題モード</h2>
+<!-- ============================
+   タブ
+============================ -->
+<div id="tabs">
+    <div id="tab-solver" class="tab active">ソルバー</div>
+    <div id="tab-generator" class="tab">出題モード</div>
+</div>
 
-<!-- ========================= -->
-<!-- 出題モード -->
-<!-- ========================= -->
-<div class="card">
+<!-- ============================
+   ソルバー画面
+============================ -->
+<div id="screen-solver" class="screen active">
+
+    <h3>ソルバー</h3>
+
+    <input id="pattern" type="text" placeholder="例：〇メ〇〇 / 1〇1〇">
+
+    <div class="dict-select">
+        <label class="dict-option selected" id="opt-country">
+            <input type="radio" name="dict" value="country" checked> 国名
+        </label>
+        <label class="dict-option" id="opt-capital">
+            <input type="radio" name="dict" value="capital"> 首都
+        </label>
+        <label class="dict-option" id="opt-both">
+            <input type="radio" name="dict" value="both"> 両方
+        </label>
+    </div>
+
+    <div style="margin-top:10px;">
+        <input type="checkbox" id="shiritori">
+        <label for="shiritori">しりとりモード（複数連結）</label>
+    </div>
+
+    <button onclick="runSolve()">解く</button>
+
+    <pre id="result-solver">ここに結果が表示されます</pre>
+</div>
+
+<!-- ============================
+   出題モード画面
+============================ -->
+<div id="screen-generator" class="screen">
+
     <h3>出題モード</h3>
 
     <label>文字数</label>
     <input id="genLen" type="number" value="6" min="2">
 
-    <label style="margin-top:10px;">出題方式</label>
-    <select id="genMode" style="width:100%; padding:10px; font-size:18px;">
+    <label>出題方式</label>
+    <select id="genMode">
         <option value="all">全通り</option>
         <option value="random">ランダム n 通り</option>
     </select>
 
-    <div id="randomBox" style="margin-top:10px;">
+    <div id="randomBox">
         n = <input id="genRandomN" type="number" value="30" min="1" style="width:80px;">
     </div>
 
-    <label style="margin-top:10px;">解の通り数条件</label>
-    <select id="genCond" style="width:100%; padding:10px; font-size:18px;">
+    <label>解の通り数条件</label>
+    <select id="genCond">
         <option value="eq">ちょうど N 通り</option>
         <option value="ge">N 通り以上</option>
         <option value="le">N 通り以下</option>
     </select>
 
-    N = <input id="genCondN" type="number" value="3" min="1" style="width:80px;">
+    N = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
 
     <div style="margin-top:10px;">辞書を選択：</div>
     <div class="dict-select">
@@ -130,72 +196,54 @@ pre {
         </label>
     </div>
 
-    <div class="switch">
+    <div style="margin-top:10px;">
         <input type="checkbox" id="genShiritori">
         <label for="genShiritori">しりとりモード（複数連結）</label>
     </div>
 
-    <div style="margin-top:10px;">出力設定：</div>
-    <div class="switch">
+    <div style="margin-top:10px;">
         <input type="checkbox" id="genShowCount" checked>
         <label for="genShowCount">解の数を表示する</label>
     </div>
 
-    <label style="margin-top:10px;">例の表示</label>
-    <select id="genExampleMode" style="width:100%; padding:10px; font-size:18px;">
+    <label>例の表示</label>
+    <select id="genExampleMode">
         <option value="none">なし</option>
         <option value="one">1つだけ</option>
         <option value="all">すべて</option>
     </select>
 
     <button onclick="runGenerate()">出題する</button>
-</div>
 
-<!-- ========================= -->
-<!-- ソルバー -->
-<!-- ========================= -->
-<h2>国名スプリントシャウト・ソルバー</h2>
-
-<div class="card">
-    <input id="pattern" type="text" placeholder="例：〇メ〇〇 / 1〇1〇">
-</div>
-
-<div class="card">
-    <div>辞書を選択：</div>
-    <div class="dict-select">
-        <label class="dict-option selected" id="opt-country">
-            <input type="radio" name="dict" value="country" checked> 国名
-        </label>
-        <label class="dict-option" id="opt-capital">
-            <input type="radio" name="dict" value="capital"> 首都
-        </label>
-        <label class="dict-option" id="opt-both">
-            <input type="radio" name="dict" value="both"> 両方
-        </label>
-    </div>
-
-    <div class="switch">
-        <input type="checkbox" id="shiritori">
-        <label for="shiritori">しりとりモード（複数連結）</label>
-    </div>
-
-    <button onclick="runSolve()">解く</button>
-</div>
-
-<div class="card">
-    <pre id="result">ここに結果が表示されます</pre>
+    <pre id="result-generator">ここに出題結果が表示されます</pre>
 </div>
 
 <script src="dictionary.js"></script>
 
 <script>
 /* ============================
+   タブ切り替え
+============================ */
+document.getElementById("tab-solver").onclick = () => {
+    document.getElementById("tab-solver").classList.add("active");
+    document.getElementById("tab-generator").classList.remove("active");
+    document.getElementById("screen-solver").classList.add("active");
+    document.getElementById("screen-generator").classList.remove("active");
+};
+
+document.getElementById("tab-generator").onclick = () => {
+    document.getElementById("tab-generator").classList.add("active");
+    document.getElementById("tab-solver").classList.remove("active");
+    document.getElementById("screen-generator").classList.add("active");
+    document.getElementById("screen-solver").classList.remove("active");
+};
+
+/* ============================
    正規化（〇・○、①②→1,2）
 ============================ */
 function normalizeInput(str) {
     str = str.replace(/[\uff61-\uff9f]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
     str = str.replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-
     str = str.replace(/○/g, "〇");
 
     const circled = { "①":"1","②":"2","③":"3","④":"4","⑤":"5","⑥":"6","⑦":"7","⑧":"8","⑨":"9" };
@@ -377,7 +425,7 @@ function runGenerate(){
     }
 
     if(results.length===0){
-        document.getElementById("result").textContent="該当なし";
+        document.getElementById("result-generator").textContent="該当なし";
         return;
     }
 
@@ -391,7 +439,7 @@ function runGenerate(){
         out += "\n";
     }
 
-    document.getElementById("result").textContent = out;
+    document.getElementById("result-generator").textContent = out;
 }
 
 /* ============================
@@ -405,7 +453,7 @@ function runSolve(){
     const res=solvePattern(p,s,dictMode);
 
     if(res.length===0){
-        document.getElementById("result").textContent="一致なし";
+        document.getElementById("result-solver").textContent="一致なし";
         return;
     }
 
@@ -413,7 +461,7 @@ function runSolve(){
     for(const chain of res){
         out += chain.join(" → ") + "\n";
     }
-    document.getElementById("result").textContent=out;
+    document.getElementById("result-solver").textContent=out;
 }
 
 /* 辞書選択の見た目 */
