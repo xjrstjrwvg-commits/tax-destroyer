@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>国名スプリントシャウト・ソルバー＋出題モード（抽象化統合版）</title>
+<title>UltraEngine風 スプリントシャウト</title>
 
 <style>
 html, body { touch-action: manipulation; }
@@ -18,7 +18,7 @@ body {
 }
 
 /* ============================
-   タブ UI
+   UltraEngine風 タブ
 ============================ */
 #tabs {
     display: flex;
@@ -35,7 +35,6 @@ body {
     color: #333;
     cursor: pointer;
     user-select: none;
-    transition: 0.2s;
 }
 
 .tab.active {
@@ -44,45 +43,50 @@ body {
     font-weight: bold;
 }
 
-.screen {
-    display: none;
-}
-
-.screen.active {
-    display: block;
-}
+.screen { display: none; }
+.screen.active { display: block; }
 
 /* ============================
-   共通UI
+   UltraEngine風 入力欄
 ============================ */
 input[type="text"], input[type="number"], select {
     width: 100%;
     font-size: 20px;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #ccc;
+    background: #f9f9f9;
     box-sizing: border-box;
     margin-top: 10px;
 }
 
+/* ============================
+   UltraEngine風 チェックボックス
+============================ */
 input[type="checkbox"] {
     width: 24px;
     height: 24px;
-    transform: scale(1.4);
+    transform: scale(1.3);
     margin-right: 6px;
 }
 
+/* ============================
+   UltraEngine風 ボタン
+============================ */
 button {
     width: 100%;
     padding: 14px;
     font-size: 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #007aff;
     color: white;
-    margin-top: 10px;
+    margin-top: 14px;
 }
 
+/* ============================
+   UltraEngine風 辞書選択
+============================ */
 .dict-select {
     display: flex;
     gap: 10px;
@@ -91,11 +95,11 @@ button {
 
 .dict-option {
     flex: 1;
-    background: #f0f0f0;
+    background: #f9f9f9;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     text-align: center;
-    border: 2px solid transparent;
+    border: 1px solid #ccc;
 }
 
 .dict-option.selected {
@@ -103,13 +107,18 @@ button {
     background: #e8f0ff;
 }
 
+/* ============================
+   UltraEngine風 結果表示
+============================ */
 pre {
     background: #fff;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 6px;
     white-space: pre-wrap;
-    border: 1px solid #ddd;
-    margin-top: 10px;
+    border: 1px solid #d0d0d0;
+    margin-top: 14px;
+    font-size: 18px;
+    line-height: 1.35;
 }
 </style>
 </head>
@@ -130,7 +139,7 @@ pre {
 
     <h3>ソルバー</h3>
 
-    <input id="pattern" type="text" placeholder="例：〇メ〇〇 / 1〇1〇">
+    <input id="pattern" type="text" placeholder="例：〇①〇〇②">
 
     <div class="dict-select">
         <label class="dict-option selected" id="opt-country">
@@ -146,12 +155,12 @@ pre {
 
     <div style="margin-top:10px;">
         <input type="checkbox" id="shiritori">
-        <label for="shiritori">しりとりモード（複数連結）</label>
+        <label for="shiritori">しりとりモード</label>
     </div>
 
     <div style="margin-top:10px;">
         <input type="checkbox" id="normalizeDakuten">
-        <label for="normalizeDakuten">濁点・小文字を同一視する</label>
+        <label for="normalizeDakuten">濁点・小文字を同一視</label>
     </div>
 
     <button onclick="runSolve()">解く</button>
@@ -160,7 +169,7 @@ pre {
 </div>
 
 <!-- ============================
-   出題モード画面（ここから続く）
+   出題モード画面（後半に続く）
 ============================ -->
 <!-- ============================
    出題モード画面
@@ -169,25 +178,24 @@ pre {
 
     <h3>出題モード（抽象化方式）</h3>
 
-    <label>しりとり連結語の文字数条件</label>
+    <label>しりとり連結語の長さ</label>
     <select id="genLenMode">
-        <option value="eq">ちょうど N 文字</option>
-        <option value="ge">N 文字以上</option>
-        <option value="le">N 文字以下</option>
+        <option value="eq">= N</option>
+        <option value="ge">≥ N</option>
+        <option value="le">≤ N</option>
     </select>
 
     N = <input id="genLenN" type="number" value="10" min="2" style="width:80px;">
 
-    <label style="margin-top:10px;">解の通り数条件</label>
+    <label style="margin-top:10px;">解の通り数</label>
     <select id="genCond">
-        <option value="eq">ちょうど M 通り</option>
-        <option value="ge">M 通り以上</option>
-        <option value="le">M 通り以下</option>
+        <option value="eq">= M</option>
+        <option value="ge">≥ M</option>
+        <option value="le">≤ M</option>
     </select>
 
     M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
 
-    <div style="margin-top:10px;">辞書を選択：</div>
     <div class="dict-select">
         <label class="dict-option selected" id="opt-country2">
             <input type="radio" name="dict2" value="country" checked> 国名
@@ -202,20 +210,8 @@ pre {
 
     <div style="margin-top:10px;">
         <input type="checkbox" id="genNormalizeDakuten">
-        <label for="genNormalizeDakuten">濁点・小文字を同一視する</label>
+        <label for="genNormalizeDakuten">濁点・小文字を同一視</label>
     </div>
-
-    <div style="margin-top:10px;">
-        <input type="checkbox" id="genShowCount" checked>
-        <label for="genShowCount">解の数を表示する</label>
-    </div>
-
-    <label>例の表示</label>
-    <select id="genExampleMode">
-        <option value="none">なし</option>
-        <option value="one">1つだけ</option>
-        <option value="all">すべて</option>
-    </select>
 
     <button onclick="runGenerate()">出題する</button>
 
@@ -243,7 +239,7 @@ document.getElementById("tab-generator").onclick = () => {
 };
 
 /* ============================
-   濁点・小文字同一視用正規化
+   濁点・小文字同一視
 ============================ */
 function normalizeDakutenSmall(str) {
     const map = {
@@ -274,35 +270,26 @@ function normalizeDakutenSmall(str) {
         "ボ":"ホ","ポ":"ホ","ホ":"ホ"
     };
     let out = "";
-    for (const ch of str) {
-        out += map[ch] || ch;
-    }
+    for (const ch of str) out += map[ch] || ch;
     return out;
 }
 
 /* ============================
-   入力正規化（〇・○、①②→1,2）
+   入力正規化
 ============================ */
 function normalizeInput(str) {
-    str = str.replace(/[\uff61-\uff9f]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-    str = str.replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
     str = str.replace(/○/g, "〇");
-
     const circled = { "①":"1","②":"2","③":"3","④":"4","⑤":"5","⑥":"6","⑦":"7","⑧":"8","⑨":"9" };
     str = str.replace(/[①②③④⑤⑥⑦⑧⑨]/g, ch => circled[ch]);
-
     return str;
 }
 
 /* ============================
-   パターン一致（濁点同一視対応）
+   パターン一致
 ============================ */
 function matchPattern(pattern, word, useDakutenMode) {
     if (pattern.length !== word.length) return false;
-
-    if (useDakutenMode) {
-        word = normalizeDakutenSmall(word);
-    }
+    if (useDakutenMode) word = normalizeDakutenSmall(word);
 
     const mapNumToChar = {};
     const usedChars = {};
@@ -350,7 +337,7 @@ function generateShiritoriChains(list, maxLength=4){
 }
 
 /* ============================
-   ソルバー本体
+   ソルバー
 ============================ */
 function solvePattern(inputPattern, shiritoriMode, dictMode, useDakutenMode){
     const pattern = normalizeInput(inputPattern);
@@ -384,18 +371,14 @@ function solvePattern(inputPattern, shiritoriMode, dictMode, useDakutenMode){
 }
 
 /* ============================
-   抽象化：出現回数ベース
+   抽象化（出現回数ベース）
 ============================ */
 function abstractWordByFrequency(word, useDakutenMode){
     let base = word;
-    if(useDakutenMode){
-        base = normalizeDakutenSmall(base);
-    }
+    if(useDakutenMode) base = normalizeDakutenSmall(base);
 
     const freq = {};
-    for(const ch of base){
-        freq[ch] = (freq[ch] || 0) + 1;
-    }
+    for(const ch of base) freq[ch] = (freq[ch] || 0) + 1;
 
     const labelMap = {};
     let nextLabel = 1;
@@ -403,9 +386,7 @@ function abstractWordByFrequency(word, useDakutenMode){
     let result = "";
     for(const ch of base){
         if(freq[ch] >= 2){
-            if(!labelMap[ch]){
-                labelMap[ch] = String(nextLabel++);
-            }
+            if(!labelMap[ch]) labelMap[ch] = String(nextLabel++);
             result += labelMap[ch];
         } else {
             result += "〇";
@@ -415,7 +396,7 @@ function abstractWordByFrequency(word, useDakutenMode){
 }
 
 /* ============================
-   出題モード本体（抽象化方式）
+   出題モード
 ============================ */
 function runGenerate(){
     const lenMode = document.getElementById("genLenMode").value;
@@ -424,9 +405,6 @@ function runGenerate(){
     const condN = Number(document.getElementById("genCondN").value);
     const dictMode = document.querySelector("input[name=dict2]:checked").value;
     const useDakutenMode = document.getElementById("genNormalizeDakuten").checked;
-
-    const showCount = document.getElementById("genShowCount").checked;
-    const exampleMode = document.getElementById("genExampleMode").value;
 
     let list=[];
     if(dictMode==="country") list=window.DICT.country;
@@ -465,19 +443,10 @@ function runGenerate(){
         if(cond==="le" && cnt<=condN) ok=true;
 
         if(ok){
-            let example="";
-            if(exampleMode==="one" && sols.length>0){
-                example = sols[0].join(" → ");
-            }
-            if(exampleMode==="all"){
-                example = sols.map(s=>s.join(" → ")).join("\n");
-            }
-
             results.push({
                 pattern,
                 count: cnt,
-                chain: obj.chain,
-                example
+                chain: obj.chain
             });
         }
     }
@@ -491,11 +460,7 @@ function runGenerate(){
     for(const r of results){
         out += `【問題】${r.pattern}\n`;
         out += `連結語：${r.chain.join(" → ")}\n`;
-        if(showCount) out += `解の数：${r.count}\n`;
-        if(r.example){
-            out += `例：\n${r.example}\n`;
-        }
-        out += "\n";
+        out += `解の数：${r.count}\n\n`;
     }
 
     document.getElementById("result-generator").textContent = out;
@@ -524,7 +489,9 @@ function runSolve(){
     document.getElementById("result-solver").textContent=out;
 }
 
-/* 辞書選択の見た目 */
+/* ============================
+   辞書選択の見た目
+============================ */
 document.querySelectorAll(".dict-option").forEach(opt=>{
     opt.addEventListener("click",()=>{
         document.querySelectorAll(".dict-option").forEach(o=>o.classList.remove("selected"));
