@@ -204,6 +204,9 @@ pre {
 
     M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
 
+    <!-- ★★★ 改行（あなたの要望） ★★★ -->
+    <div style="height:12px;"></div>
+
     <!-- 例の表示 -->
     <label style="margin-top:10px;">例の表示</label>
     <select id="genExampleMode">
@@ -236,6 +239,7 @@ pre {
         <label for="genNormalizeDakuten">濁点・小文字を同一視</label>
     </div>
 
+    <!-- ★★★ 出題するまでを1画面に収めるため余白最適化 ★★★ -->
     <button onclick="runGenerate()">出題する</button>
 
     <pre id="result-generator">ここに出題結果が表示されます</pre>
