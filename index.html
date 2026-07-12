@@ -120,6 +120,11 @@ pre {
     font-size: 18px;
     line-height: 1.35;
 }
+.copyLink {
+    color:#007aff;
+    cursor:pointer;
+    margin-right:12px;
+}
 </style>
 </head>
 <body>
@@ -187,6 +192,9 @@ pre {
 
     N = <input id="genLenN" type="number" value="10" min="2" style="width:80px;">
 
+    <!-- 改行（UltraEngine風余白） -->
+    <div style="height:12px;"></div>
+
     <label style="margin-top:10px;">解の通り数</label>
     <select id="genCond">
         <option value="eq">= M</option>
@@ -195,6 +203,21 @@ pre {
     </select>
 
     M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
+
+    <!-- 例の表示 -->
+    <label style="margin-top:10px;">例の表示</label>
+    <select id="genExampleMode">
+        <option value="none">なし</option>
+        <option value="one">1つだけ</option>
+        <option value="all">すべて</option>
+    </select>
+
+    <!-- ソート方法 -->
+    <label style="margin-top:10px;">ソート</label>
+    <select id="genSort">
+        <option value="kana">50音順</option>
+        <option value="random">ランダム</option>
+    </select>
 
     <div class="dict-select">
         <label class="dict-option selected" id="opt-country2">
@@ -216,6 +239,13 @@ pre {
     <button onclick="runGenerate()">出題する</button>
 
     <pre id="result-generator">ここに出題結果が表示されます</pre>
+
+    <!-- コピー機能 -->
+    <div id="copyArea" style="margin-top:10px; font-size:16px; color:#007aff;">
+        <span class="copyLink" onclick="copyOne()">この問題</span>
+        <span class="copyLink" onclick="copyAll()">全部</span>
+        <span class="copyLink" onclick="copySome()">件数指定</span>
+    </div>
 </div>
 
 <script src="dictionary.js"></script>
@@ -405,6 +435,8 @@ function runGenerate(){
     const condN = Number(document.getElementById("genCondN").value);
     const dictMode = document.querySelector("input[name=dict2]:checked").value;
     const useDakutenMode = document.getElementById("genNormalizeDakuten").checked;
+    const exampleMode = document.getElementById("genExampleMode").value;
+    const sortMode = document.getElementById("genSort").value;
 
     let list=[];
     if(dictMode==="country") list=window.DICT.country;
@@ -443,12 +475,29 @@ function runGenerate(){
         if(cond==="le" && cnt<=condN) ok=true;
 
         if(ok){
+            let example="";
+            if(exampleMode==="one" && sols.length>0){
+                example = sols[0].join(" → ");
+            }
+            if(exampleMode==="all"){
+                example = sols.map(s=>s.join(" → ")).join("\n");
+            }
+
             results.push({
                 pattern,
                 count: cnt,
-                chain: obj.chain
+                chain: obj.chain,
+                example
             });
         }
+    }
+
+    /* ソート */
+    if(sortMode === "kana"){
+        results.sort((a,b)=> a.pattern.localeCompare(b.pattern, "ja"));
+    }
+    if(sortMode === "random"){
+        results.sort(()=> Math.random() - 0.5);
     }
 
     if(results.length===0){
@@ -460,10 +509,37 @@ function runGenerate(){
     for(const r of results){
         out += `【問題】${r.pattern}\n`;
         out += `連結語：${r.chain.join(" → ")}\n`;
-        out += `解の数：${r.count}\n\n`;
+        out += `解の数：${r.count}\n`;
+        if(r.example){
+            out += `例：\n${r.example}\n`;
+        }
+        out += `\n`;
     }
 
     document.getElementById("result-generator").textContent = out;
+}
+
+/* ============================
+   コピー機能
+============================ */
+function copyOne(){
+    const txt = document.getElementById("result-generator").textContent.trim();
+    const first = txt.split("\n\n")[0];
+    navigator.clipboard.writeText(first);
+}
+
+function copyAll(){
+    const txt = document.getElementById("result-generator").textContent.trim();
+    navigator.clipboard.writeText(txt);
+}
+
+function copySome(){
+    const n = prompt("何件コピーしますか？");
+    if(!n) return;
+    const txt = document.getElementById("result-generator").textContent.trim();
+    const blocks = txt.split("\n\n");
+    const pick = blocks.slice(0, Number(n)).join("\n\n");
+    navigator.clipboard.writeText(pick);
 }
 
 /* ============================
