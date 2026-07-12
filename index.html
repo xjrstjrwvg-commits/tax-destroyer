@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>国名スプリントシャウト・ソルバー＋出題モード</title>
+<title>国名スプリントシャウト・ソルバー＋出題モード（抽象化統合版）</title>
 
 <style>
 html, body { touch-action: manipulation; }
@@ -149,39 +149,43 @@ pre {
         <label for="shiritori">しりとりモード（複数連結）</label>
     </div>
 
+    <div style="margin-top:10px;">
+        <input type="checkbox" id="normalizeDakuten">
+        <label for="normalizeDakuten">濁点・小文字を同一視する</label>
+    </div>
+
     <button onclick="runSolve()">解く</button>
 
     <pre id="result-solver">ここに結果が表示されます</pre>
 </div>
 
 <!-- ============================
+   出題モード画面（ここから続く）
+============================ -->
+<!-- ============================
    出題モード画面
 ============================ -->
 <div id="screen-generator" class="screen">
 
-    <h3>出題モード</h3>
+    <h3>出題モード（抽象化方式）</h3>
 
-    <label>文字数</label>
-    <input id="genLen" type="number" value="6" min="2">
-
-    <label>出題方式</label>
-    <select id="genMode">
-        <option value="all">全通り</option>
-        <option value="random">ランダム n 通り</option>
+    <label>しりとり連結語の文字数条件</label>
+    <select id="genLenMode">
+        <option value="eq">ちょうど N 文字</option>
+        <option value="ge">N 文字以上</option>
+        <option value="le">N 文字以下</option>
     </select>
 
-    <div id="randomBox">
-        n = <input id="genRandomN" type="number" value="30" min="1" style="width:80px;">
-    </div>
+    N = <input id="genLenN" type="number" value="10" min="2" style="width:80px;">
 
-    <label>解の通り数条件</label>
+    <label style="margin-top:10px;">解の通り数条件</label>
     <select id="genCond">
-        <option value="eq">ちょうど N 通り</option>
-        <option value="ge">N 通り以上</option>
-        <option value="le">N 通り以下</option>
+        <option value="eq">ちょうど M 通り</option>
+        <option value="ge">M 通り以上</option>
+        <option value="le">M 通り以下</option>
     </select>
 
-    N = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
+    M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
 
     <div style="margin-top:10px;">辞書を選択：</div>
     <div class="dict-select">
@@ -197,8 +201,8 @@ pre {
     </div>
 
     <div style="margin-top:10px;">
-        <input type="checkbox" id="genShiritori">
-        <label for="genShiritori">しりとりモード（複数連結）</label>
+        <input type="checkbox" id="genNormalizeDakuten">
+        <label for="genNormalizeDakuten">濁点・小文字を同一視する</label>
     </div>
 
     <div style="margin-top:10px;">
@@ -239,7 +243,45 @@ document.getElementById("tab-generator").onclick = () => {
 };
 
 /* ============================
-   正規化（〇・○、①②→1,2）
+   濁点・小文字同一視用正規化
+============================ */
+function normalizeDakutenSmall(str) {
+    const map = {
+        "ァ":"ア","ア":"ア",
+        "ィ":"イ","イ":"イ",
+        "ゥ":"ウ","ウ":"ウ",
+        "ェ":"エ","エ":"エ",
+        "ォ":"オ","オ":"オ",
+        "ガ":"カ","カ":"カ",
+        "ギ":"キ","キ":"キ",
+        "グ":"ク","ク":"ク",
+        "ゲ":"ケ","ケ":"ケ",
+        "ゴ":"コ","コ":"コ",
+        "ザ":"サ","サ":"サ",
+        "ジ":"シ","シ":"シ",
+        "ズ":"ス","ス":"ス",
+        "ゼ":"セ","セ":"セ",
+        "ゾ":"ソ","ソ":"ソ",
+        "ダ":"タ","タ":"タ",
+        "ヂ":"チ","チ":"チ",
+        "ヅ":"ツ","ツ":"ツ",
+        "デ":"テ","テ":"テ",
+        "ド":"ト","ト":"ト",
+        "バ":"ハ","パ":"ハ","ハ":"ハ",
+        "ビ":"ヒ","ピ":"ヒ","ヒ":"ヒ",
+        "ブ":"フ","プ":"フ","フ":"フ",
+        "ベ":"ヘ","ペ":"ヘ","ヘ":"ヘ",
+        "ボ":"ホ","ポ":"ホ","ホ":"ホ"
+    };
+    let out = "";
+    for (const ch of str) {
+        out += map[ch] || ch;
+    }
+    return out;
+}
+
+/* ============================
+   入力正規化（〇・○、①②→1,2）
 ============================ */
 function normalizeInput(str) {
     str = str.replace(/[\uff61-\uff9f]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
@@ -253,10 +295,14 @@ function normalizeInput(str) {
 }
 
 /* ============================
-   パターン一致
+   パターン一致（濁点同一視対応）
 ============================ */
-function matchPattern(pattern, word) {
+function matchPattern(pattern, word, useDakutenMode) {
     if (pattern.length !== word.length) return false;
+
+    if (useDakutenMode) {
+        word = normalizeDakutenSmall(word);
+    }
 
     const mapNumToChar = {};
     const usedChars = {};
@@ -306,7 +352,7 @@ function generateShiritoriChains(list, maxLength=4){
 /* ============================
    ソルバー本体
 ============================ */
-function solvePattern(inputPattern, shiritoriMode, dictMode){
+function solvePattern(inputPattern, shiritoriMode, dictMode, useDakutenMode){
     const pattern = normalizeInput(inputPattern);
 
     let list=[];
@@ -319,14 +365,17 @@ function solvePattern(inputPattern, shiritoriMode, dictMode){
     if(shiritoriMode){
         const chains=generateShiritoriChains(list,4);
         for(const chain of chains){
-            const joined=chain.join("");
-            if(joined.length===pattern.length && matchPattern(pattern,joined)){
+            let joined = chain.join("");
+            if(useDakutenMode) joined = normalizeDakutenSmall(joined);
+            if(joined.length===pattern.length && matchPattern(pattern,joined,useDakutenMode)){
                 candidates.push(chain);
             }
         }
     } else {
         for(const w of list){
-            if(matchPattern(pattern,w)){
+            let ww = w;
+            if(useDakutenMode) ww = normalizeDakutenSmall(ww);
+            if(matchPattern(pattern,ww,useDakutenMode)){
                 candidates.push([w]);
             }
         }
@@ -335,42 +384,46 @@ function solvePattern(inputPattern, shiritoriMode, dictMode){
 }
 
 /* ============================
-   出題モード：伏せ字生成
+   抽象化：出現回数ベース
 ============================ */
-function generatePatternsFromWord(word){
-    const len = word.length;
-    const patterns=[];
-
-    for(let mask=1; mask<(1<<len); mask++){
-        let p="";
-        const map={};
-        let nextNum=1;
-
-        for(let i=0;i<len;i++){
-            if(mask & (1<<i)){
-                const ch = word[i];
-                if(!map[ch]) map[ch]=String(nextNum++);
-                p += map[ch];
-            } else {
-                p += "〇";
-            }
-        }
-        patterns.push(p);
+function abstractWordByFrequency(word, useDakutenMode){
+    let base = word;
+    if(useDakutenMode){
+        base = normalizeDakutenSmall(base);
     }
-    return patterns;
+
+    const freq = {};
+    for(const ch of base){
+        freq[ch] = (freq[ch] || 0) + 1;
+    }
+
+    const labelMap = {};
+    let nextLabel = 1;
+
+    let result = "";
+    for(const ch of base){
+        if(freq[ch] >= 2){
+            if(!labelMap[ch]){
+                labelMap[ch] = String(nextLabel++);
+            }
+            result += labelMap[ch];
+        } else {
+            result += "〇";
+        }
+    }
+    return result;
 }
 
 /* ============================
-   出題モード本体
+   出題モード本体（抽象化方式）
 ============================ */
 function runGenerate(){
-    const len = Number(document.getElementById("genLen").value);
-    const mode = document.getElementById("genMode").value;
-    const randN = Number(document.getElementById("genRandomN").value);
+    const lenMode = document.getElementById("genLenMode").value;
+    const lenN = Number(document.getElementById("genLenN").value);
     const cond = document.getElementById("genCond").value;
     const condN = Number(document.getElementById("genCondN").value);
     const dictMode = document.querySelector("input[name=dict2]:checked").value;
-    const shiritori = document.getElementById("genShiritori").checked;
+    const useDakutenMode = document.getElementById("genNormalizeDakuten").checked;
 
     const showCount = document.getElementById("genShowCount").checked;
     const exampleMode = document.getElementById("genExampleMode").value;
@@ -380,47 +433,52 @@ function runGenerate(){
     if(dictMode==="capital") list=window.DICT.capital;
     if(dictMode==="both") list=[...window.DICT.country,...window.DICT.capital];
 
-    let baseWords=[];
+    const chains = generateShiritoriChains(list,4);
 
-    if(shiritori){
-        const chains=generateShiritoriChains(list,4);
-        for(const chain of chains){
-            const joined=chain.join("");
-            if(joined.length===len) baseWords.push(joined);
+    let baseWords = [];
+    for(const chain of chains){
+        let joined = chain.join("");
+        let normalizedJoined = useDakutenMode ? normalizeDakutenSmall(joined) : joined;
+        const L = normalizedJoined.length;
+
+        let okLen = false;
+        if(lenMode==="eq" && L===lenN) okLen=true;
+        if(lenMode==="ge" && L>=lenN) okLen=true;
+        if(lenMode==="le" && L<=lenN) okLen=true;
+
+        if(okLen){
+            baseWords.push({chain, joined: normalizedJoined});
         }
-    } else {
-        baseWords = list.filter(w => w.length===len);
     }
 
-    if(mode==="random"){
-        baseWords = baseWords.sort(()=>Math.random()-0.5).slice(0,randN);
-    }
+    let results = [];
 
-    let results=[];
+    for(const obj of baseWords){
+        const pattern = abstractWordByFrequency(obj.joined, useDakutenMode);
 
-    for(const w of baseWords){
-        const patterns = generatePatternsFromWord(w);
+        const sols = solvePattern(pattern, true, dictMode, useDakutenMode);
+        const cnt = sols.length;
 
-        for(const p of patterns){
-            const sols = solvePattern(p, shiritori, dictMode);
-            const cnt = sols.length;
+        let ok=false;
+        if(cond==="eq" && cnt===condN) ok=true;
+        if(cond==="ge" && cnt>=condN) ok=true;
+        if(cond==="le" && cnt<=condN) ok=true;
 
-            let ok=false;
-            if(cond==="eq" && cnt===condN) ok=true;
-            if(cond==="ge" && cnt>=condN) ok=true;
-            if(cond==="le" && cnt<=condN) ok=true;
-
-            if(ok){
-                let example="";
-                if(exampleMode==="one" && sols.length>0){
-                    example = sols[0].join(" → ");
-                }
-                if(exampleMode==="all"){
-                    example = sols.map(s=>s.join(" → ")).join("\n");
-                }
-
-                results.push({pattern:p,count:cnt,example});
+        if(ok){
+            let example="";
+            if(exampleMode==="one" && sols.length>0){
+                example = sols[0].join(" → ");
             }
+            if(exampleMode==="all"){
+                example = sols.map(s=>s.join(" → ")).join("\n");
+            }
+
+            results.push({
+                pattern,
+                count: cnt,
+                chain: obj.chain,
+                example
+            });
         }
     }
 
@@ -432,6 +490,7 @@ function runGenerate(){
     let out="";
     for(const r of results){
         out += `【問題】${r.pattern}\n`;
+        out += `連結語：${r.chain.join(" → ")}\n`;
         if(showCount) out += `解の数：${r.count}\n`;
         if(r.example){
             out += `例：\n${r.example}\n`;
@@ -449,8 +508,9 @@ function runSolve(){
     const p=document.getElementById("pattern").value;
     const s=document.getElementById("shiritori").checked;
     const dictMode=document.querySelector("input[name=dict]:checked").value;
+    const useDakutenMode = document.getElementById("normalizeDakuten").checked;
 
-    const res=solvePattern(p,s,dictMode);
+    const res=solvePattern(p,s,dictMode,useDakutenMode);
 
     if(res.length===0){
         document.getElementById("result-solver").textContent="一致なし";
