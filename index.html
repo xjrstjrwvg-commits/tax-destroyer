@@ -4,122 +4,182 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>国名しりとり出題ツール</title>
+<title>国名スプリントシャウト・ソルバー＋出題モード</title>
 
 <style>
+html, body { touch-action: manipulation; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     padding: 20px;
-    max-width: 700px;
+    background: #fafafa;
+    color: #333;
+    max-width: 600px;
     margin: auto;
 }
 
+/* カード */
 .card {
-    background: #fff;
+    background: white;
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     margin-bottom: 20px;
 }
 
-input, select {
-    font-size: 18px;
-    padding: 6px;
-}
-
-.numBtn {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-    border: none;
-    border-radius: 8px;
-    background: #007aff;
-    color: white;
-}
-
-.smallInput {
-    width: 60px;
-    text-align: center;
+/* 入力 */
+input[type="text"], input[type="number"] {
+    width: 100%;
     font-size: 20px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
 }
 
-button.mainBtn {
+/* チェックボックス */
+input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    transform: scale(1.4);
+    margin-right: 6px;
+}
+
+/* ボタン */
+button {
     width: 100%;
     padding: 14px;
     font-size: 20px;
-    background: #007aff;
-    color: white;
     border: none;
     border-radius: 8px;
+    background: #007aff;
+    color: white;
+    margin-top: 10px;
 }
 
+/* 辞書選択 */
+.dict-select {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.dict-option {
+    flex: 1;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid transparent;
+}
+.dict-option.selected {
+    border-color: #007aff;
+    background: #e8f0ff;
+}
+
+/* 結果 */
 pre {
-    background: #f5f5f5;
+    background: #fff;
     padding: 16px;
     border-radius: 8px;
     white-space: pre-wrap;
+    border: 1px solid #ddd;
 }
 </style>
 </head>
 <body>
 
-<h2>国名しりとり出題ツール</h2>
+<h2>国名スプリントシャウト・出題モード</h2>
 
+<!-- ========================= -->
+<!-- 出題モード -->
+<!-- ========================= -->
 <div class="card">
+    <h3>出題モード</h3>
 
-    <!-- 国数 + 開始字 + 終了字 -->
-    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+    <label>文字数</label>
+    <input id="genLen" type="number" value="6" min="2">
 
-        <div>
-            <label>国数</label><br>
-            <button onclick="decN()" class="numBtn">−</button>
-            <input id="chainN" type="number" value="3" min="1" class="smallInput">
-            <button onclick="incN()" class="numBtn">＋</button>
-        </div>
+    <label style="margin-top:10px;">出題方式</label>
+    <select id="genMode" style="width:100%; padding:10px; font-size:18px;">
+        <option value="all">全通り</option>
+        <option value="random">ランダム n 通り</option>
+    </select>
 
-        <div>
-            <label>開始字</label><br>
-            <input id="startChar" type="text" maxlength="1" class="smallInput">
-        </div>
-
-        <div>
-            <label>終了字</label><br>
-            <input id="endChar" type="text" maxlength="1" class="smallInput">
-        </div>
-
+    <div id="randomBox" style="margin-top:10px;">
+        n = <input id="genRandomN" type="number" value="30" min="1" style="width:80px;">
     </div>
 
-    <br>
-
-    <label>辞書</label><br>
-    <select id="dictMode" style="width:100%;">
-        <option value="country">国名</option>
-        <option value="capital">首都</option>
-        <option value="both">両方</option>
+    <label style="margin-top:10px;">解の通り数条件</label>
+    <select id="genCond" style="width:100%; padding:10px; font-size:18px;">
+        <option value="eq">ちょうど N 通り</option>
+        <option value="ge">N 通り以上</option>
+        <option value="le">N 通り以下</option>
     </select>
 
-    <br><br>
+    N = <input id="genCondN" type="number" value="3" min="1" style="width:80px;">
 
-    <label>0件フィルタ</label><br>
-    <select id="zeroFilter" style="width:100%;">
-        <option value="all">全て表示</option>
-        <option value="exclude">0件を除外</option>
-        <option value="only">0件のみ</option>
+    <div style="margin-top:10px;">辞書を選択：</div>
+    <div class="dict-select">
+        <label class="dict-option selected" id="opt-country2">
+            <input type="radio" name="dict2" value="country" checked> 国名
+        </label>
+        <label class="dict-option" id="opt-capital2">
+            <input type="radio" name="dict2" value="capital"> 首都
+        </label>
+        <label class="dict-option" id="opt-both2">
+            <input type="radio" name="dict2" value="both"> 両方
+        </label>
+    </div>
+
+    <div class="switch">
+        <input type="checkbox" id="genShiritori">
+        <label for="genShiritori">しりとりモード（複数連結）</label>
+    </div>
+
+    <div style="margin-top:10px;">出力設定：</div>
+    <div class="switch">
+        <input type="checkbox" id="genShowCount" checked>
+        <label for="genShowCount">解の数を表示する</label>
+    </div>
+
+    <label style="margin-top:10px;">例の表示</label>
+    <select id="genExampleMode" style="width:100%; padding:10px; font-size:18px;">
+        <option value="none">なし</option>
+        <option value="one">1つだけ</option>
+        <option value="all">すべて</option>
     </select>
 
-    <br><br>
+    <button onclick="runGenerate()">出題する</button>
+</div>
 
-    <label>ソート順</label><br>
-    <select id="sortMode" style="width:100%;">
-        <option value="gojuon">50音順</option>
-        <option value="asc">少ない順</option>
-        <option value="desc">多い順</option>
-        <option value="random">ランダム</option>
-    </select>
+<!-- ========================= -->
+<!-- ソルバー -->
+<!-- ========================= -->
+<h2>国名スプリントシャウト・ソルバー</h2>
 
-    <br><br>
+<div class="card">
+    <input id="pattern" type="text" placeholder="例：〇メ〇〇 / 1〇1〇">
+</div>
 
-    <button class="mainBtn" onclick="runCount()">集計する</button>
+<div class="card">
+    <div>辞書を選択：</div>
+    <div class="dict-select">
+        <label class="dict-option selected" id="opt-country">
+            <input type="radio" name="dict" value="country" checked> 国名
+        </label>
+        <label class="dict-option" id="opt-capital">
+            <input type="radio" name="dict" value="capital"> 首都
+        </label>
+        <label class="dict-option" id="opt-both">
+            <input type="radio" name="dict" value="both"> 両方
+        </label>
+    </div>
+
+    <div class="switch">
+        <input type="checkbox" id="shiritori">
+        <label for="shiritori">しりとりモード（複数連結）</label>
+    </div>
+
+    <button onclick="runSolve()">解く</button>
 </div>
 
 <div class="card">
@@ -129,122 +189,240 @@ pre {
 <script src="dictionary.js"></script>
 
 <script>
-// ===============================
-// ひらがな → カタカナ
-// ===============================
-function hiraToKata(str) {
-    return str.replace(/[\u3041-\u3096]/g, ch =>
-        String.fromCharCode(ch.charCodeAt(0) + 0x60)
-    );
+/* ============================
+   正規化（〇・○、①②→1,2）
+============================ */
+function normalizeInput(str) {
+    str = str.replace(/[\uff61-\uff9f]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+    str = str.replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+
+    str = str.replace(/○/g, "〇");
+
+    const circled = { "①":"1","②":"2","③":"3","④":"4","⑤":"5","⑥":"6","⑦":"7","⑧":"8","⑨":"9" };
+    str = str.replace(/[①②③④⑤⑥⑦⑧⑨]/g, ch => circled[ch]);
+
+    return str;
 }
 
-// ===============================
-// 国数 ± ボタン
-// ===============================
-function incN() {
-    const el = document.getElementById("chainN");
-    el.value = Number(el.value) + 1;
-}
+/* ============================
+   パターン一致
+============================ */
+function matchPattern(pattern, word) {
+    if (pattern.length !== word.length) return false;
 
-function decN() {
-    const el = document.getElementById("chainN");
-    if (Number(el.value) > 1) el.value = Number(el.value) - 1;
-}
+    const mapNumToChar = {};
+    const usedChars = {};
 
-// ===============================
-// Nカ国しりとりチェーン集計
-// ===============================
-function countChainsByStartEnd(list, N, startFilter) {
-    const result = {}; // "ア→イ": 数
+    for (let i=0;i<pattern.length;i++){
+        const p = pattern[i];
+        const w = word[i];
 
-    function dfs(chain) {
-        if (chain.length === N) {
-            const s = chain[0][0];
-            const e = chain[N-1].slice(-1);
-            const key = `${s}→${e}`;
-            if (!result[key]) result[key] = 0;
-            result[key]++;
-            return;
+        if (p === "〇") continue;
+
+        if (/[0-9]/.test(p)) {
+            if (!mapNumToChar[p]) {
+                if (usedChars[w] && usedChars[w] !== p) return false;
+                mapNumToChar[p] = w;
+                usedChars[w] = p;
+            } else {
+                if (mapNumToChar[p] !== w) return false;
+            }
+        } else {
+            if (p !== w) return false;
         }
+    }
+    return true;
+}
 
-        const last = chain[chain.length - 1];
-        const nextHead = last.slice(-1);
+/* ============================
+   しりとり連結
+============================ */
+function generateShiritoriChains(list, maxLength=4){
+    const results=[];
+    function dfs(chain,last){
+        if(chain.length>=maxLength) return;
+        for(const c of list){
+            if(chain.includes(c)) continue;
+            if(last && !c.startsWith(last)) continue;
+            const newChain=[...chain,c];
+            results.push(newChain);
+            dfs(newChain,c[c.length-1]);
+        }
+    }
+    for(const c of list){
+        dfs([c],c[c.length-1]);
+    }
+    return results;
+}
 
-        for (const w of list) {
-            if (chain.includes(w)) continue;
-            if (!w.startsWith(nextHead)) continue;
-            dfs([...chain, w]);
+/* ============================
+   ソルバー本体
+============================ */
+function solvePattern(inputPattern, shiritoriMode, dictMode){
+    const pattern = normalizeInput(inputPattern);
+
+    let list=[];
+    if(dictMode==="country") list=window.DICT.country;
+    if(dictMode==="capital") list=window.DICT.capital;
+    if(dictMode==="both") list=[...window.DICT.country,...window.DICT.capital];
+
+    let candidates=[];
+
+    if(shiritoriMode){
+        const chains=generateShiritoriChains(list,4);
+        for(const chain of chains){
+            const joined=chain.join("");
+            if(joined.length===pattern.length && matchPattern(pattern,joined)){
+                candidates.push(chain);
+            }
+        }
+    } else {
+        for(const w of list){
+            if(matchPattern(pattern,w)){
+                candidates.push([w]);
+            }
+        }
+    }
+    return candidates;
+}
+
+/* ============================
+   出題モード：伏せ字生成
+============================ */
+function generatePatternsFromWord(word){
+    const len = word.length;
+    const patterns=[];
+
+    for(let mask=1; mask<(1<<len); mask++){
+        let p="";
+        const map={};
+        let nextNum=1;
+
+        for(let i=0;i<len;i++){
+            if(mask & (1<<i)){
+                const ch = word[i];
+                if(!map[ch]) map[ch]=String(nextNum++);
+                p += map[ch];
+            } else {
+                p += "〇";
+            }
+        }
+        patterns.push(p);
+    }
+    return patterns;
+}
+
+/* ============================
+   出題モード本体
+============================ */
+function runGenerate(){
+    const len = Number(document.getElementById("genLen").value);
+    const mode = document.getElementById("genMode").value;
+    const randN = Number(document.getElementById("genRandomN").value);
+    const cond = document.getElementById("genCond").value;
+    const condN = Number(document.getElementById("genCondN").value);
+    const dictMode = document.querySelector("input[name=dict2]:checked").value;
+    const shiritori = document.getElementById("genShiritori").checked;
+
+    const showCount = document.getElementById("genShowCount").checked;
+    const exampleMode = document.getElementById("genExampleMode").value;
+
+    let list=[];
+    if(dictMode==="country") list=window.DICT.country;
+    if(dictMode==="capital") list=window.DICT.capital;
+    if(dictMode==="both") list=[...window.DICT.country,...window.DICT.capital];
+
+    let baseWords=[];
+
+    if(shiritori){
+        const chains=generateShiritoriChains(list,4);
+        for(const chain of chains){
+            const joined=chain.join("");
+            if(joined.length===len) baseWords.push(joined);
+        }
+    } else {
+        baseWords = list.filter(w => w.length===len);
+    }
+
+    if(mode==="random"){
+        baseWords = baseWords.sort(()=>Math.random()-0.5).slice(0,randN);
+    }
+
+    let results=[];
+
+    for(const w of baseWords){
+        const patterns = generatePatternsFromWord(w);
+
+        for(const p of patterns){
+            const sols = solvePattern(p, shiritori, dictMode);
+            const cnt = sols.length;
+
+            let ok=false;
+            if(cond==="eq" && cnt===condN) ok=true;
+            if(cond==="ge" && cnt>=condN) ok=true;
+            if(cond==="le" && cnt<=condN) ok=true;
+
+            if(ok){
+                let example="";
+                if(exampleMode==="one" && sols.length>0){
+                    example = sols[0].join(" → ");
+                }
+                if(exampleMode==="all"){
+                    example = sols.map(s=>s.join(" → ")).join("\n");
+                }
+
+                results.push({pattern:p,count:cnt,example});
+            }
         }
     }
 
-    for (const w of list) {
-        if (startFilter && !w.startsWith(startFilter)) continue;
-        dfs([w]);
+    if(results.length===0){
+        document.getElementById("result").textContent="該当なし";
+        return;
     }
 
-    return result;
+    let out="";
+    for(const r of results){
+        out += `【問題】${r.pattern}\n`;
+        if(showCount) out += `解の数：${r.count}\n`;
+        if(r.example){
+            out += `例：\n${r.example}\n`;
+        }
+        out += "\n";
+    }
+
+    document.getElementById("result").textContent = out;
 }
 
-// ===============================
-// UI 実行
-// ===============================
-function runCount() {
-    const resultBox = document.getElementById("result");
-    resultBox.textContent = "集計中…";   // ← ★ 追加
+/* ============================
+   ソルバー UI
+============================ */
+function runSolve(){
+    const p=document.getElementById("pattern").value;
+    const s=document.getElementById("shiritori").checked;
+    const dictMode=document.querySelector("input[name=dict]:checked").value;
 
-    setTimeout(() => {  // ← ★ UI を固まらせないために遅延実行
-        const N = Number(document.getElementById("chainN").value);
-        const dictMode = document.getElementById("dictMode").value;
+    const res=solvePattern(p,s,dictMode);
 
-        let startChar = document.getElementById("startChar").value.trim();
-        let endChar   = document.getElementById("endChar").value.trim();
+    if(res.length===0){
+        document.getElementById("result").textContent="一致なし";
+        return;
+    }
 
-        if (startChar) startChar = hiraToKata(startChar);
-        if (endChar)   endChar   = hiraToKata(endChar);
-
-        const zeroFilter = document.getElementById("zeroFilter").value;
-        const sortMode   = document.getElementById("sortMode").value;
-
-        let list = [];
-        if (dictMode === "country") list = window.DICT.country;
-        if (dictMode === "capital") list = window.DICT.capital;
-        if (dictMode === "both") list = [...window.DICT.country, ...window.DICT.capital];
-
-        const res = countChainsByStartEnd(list, N, startChar || null);
-
-        let entries = Object.entries(res);
-
-        // 終了字フィルタ
-        if (endChar) {
-            entries = entries.filter(([key, val]) => key.endsWith(endChar));
-        }
-
-        // 0件フィルタ
-        if (zeroFilter === "exclude") {
-            entries = entries.filter(([k, v]) => v > 0);
-        } else if (zeroFilter === "only") {
-            entries = entries.filter(([k, v]) => v === 0);
-        }
-
-        // ソート
-        if (sortMode === "gojuon") {
-            entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
-        } else if (sortMode === "asc") {
-            entries.sort((a, b) => a[1] - b[1]);
-        } else if (sortMode === "desc") {
-            entries.sort((a, b) => b[1] - a[1]);
-        } else if (sortMode === "random") {
-            entries.sort(() => Math.random() - 0.5);
-        }
-
-        let out = "";
-        for (const [key, val] of entries) {
-            out += `${key}　${val}通り\n`;
-        }
-
-        resultBox.textContent = out || "該当なし";
-    }, 50);
+    let out="";
+    for(const chain of res){
+        out += chain.join(" → ") + "\n";
+    }
+    document.getElementById("result").textContent=out;
 }
+
+/* 辞書選択の見た目 */
+document.querySelectorAll(".dict-option").forEach(opt=>{
+    opt.addEventListener("click",()=>{
+        document.querySelectorAll(".dict-option").forEach(o=>o.classList.remove("selected"));
+        opt.classList.add("selected");
+    });
+});
 </script>
 
 </body>
