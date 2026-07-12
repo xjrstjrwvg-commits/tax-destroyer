@@ -108,18 +108,28 @@ button {
 }
 
 /* ============================
-   UltraEngine風 結果表示
+   UltraEngine風 結果カード
 ============================ */
-pre {
+.resultCard {
     background: #fff;
-    padding: 16px;
-    border-radius: 6px;
-    white-space: pre-wrap;
     border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 12px;
     margin-top: 14px;
     font-size: 18px;
     line-height: 1.35;
 }
+
+.copyBtnSmall {
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
 .copyLink {
     color:#007aff;
     cursor:pointer;
@@ -174,9 +184,6 @@ pre {
 </div>
 
 <!-- ============================
-   出題モード画面（後半に続く）
-============================ -->
-<!-- ============================
    出題モード画面
 ============================ -->
 <div id="screen-generator" class="screen">
@@ -192,7 +199,6 @@ pre {
 
     N = <input id="genLenN" type="number" value="10" min="2" style="width:80px;">
 
-    <!-- 改行（UltraEngine風余白） -->
     <div style="height:12px;"></div>
 
     <label style="margin-top:10px;">解の通り数</label>
@@ -204,10 +210,8 @@ pre {
 
     M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
 
-    <!-- ★★★ 改行（あなたの要望） ★★★ -->
     <div style="height:12px;"></div>
 
-    <!-- 例の表示 -->
     <label style="margin-top:10px;">例の表示</label>
     <select id="genExampleMode">
         <option value="none">なし</option>
@@ -215,7 +219,6 @@ pre {
         <option value="all">すべて</option>
     </select>
 
-    <!-- ソート方法 -->
     <label style="margin-top:10px;">ソート</label>
     <select id="genSort">
         <option value="kana">50音順</option>
@@ -239,16 +242,13 @@ pre {
         <label for="genNormalizeDakuten">濁点・小文字を同一視</label>
     </div>
 
-    <!-- ★★★ 出題するまでを1画面に収めるため余白最適化 ★★★ -->
     <button onclick="runGenerate()">出題する</button>
 
-    <pre id="result-generator">ここに出題結果が表示されます</pre>
+    <div id="result-generator"></div>
 
-    <!-- コピー機能 -->
     <div id="copyArea" style="margin-top:10px; font-size:16px; color:#007aff;">
-        <span class="copyLink" onclick="copyOne()">この問題</span>
-        <span class="copyLink" onclick="copyAll()">全部</span>
-        <span class="copyLink" onclick="copySome()">件数指定</span>
+        <span class="copyLink" onclick="copyAll()">全部コピー</span>
+        <span class="copyLink" onclick="copySome()">件数指定コピー</span>
     </div>
 </div>
 
@@ -496,7 +496,7 @@ function runGenerate(){
         }
     }
 
-    /* ソート */
+        /* ソート */
     if(sortMode === "kana"){
         results.sort((a,b)=> a.pattern.localeCompare(b.pattern, "ja"));
     }
@@ -505,45 +505,45 @@ function runGenerate(){
     }
 
     if(results.length===0){
-        document.getElementById("result-generator").textContent="該当なし";
+        document.getElementById("result-generator").innerHTML="該当なし";
         return;
     }
 
-    let out="";
+    let out = `=== ${results.length} 件の問題を表示中 ===<br><br>`;
+
     for(const r of results){
-        out += `【問題】${r.pattern}\n`;
-        out += `連結語：${r.chain.join(" → ")}\n`;
-        out += `解の数：${r.count}\n`;
+        out += `<div class="resultCard">`;
+        out += `【問題】${r.pattern}<br>`;
+        out += `連結語：${r.chain.join(" → ")}<br>`;
+        out += `解の数：${r.count}<br>`;
         if(r.example){
-            out += `例：\n${r.example}\n`;
+            out += `例：<br>${r.example.replace(/\n/g,"<br>")}<br>`;
         }
-        out += `\n`;
+        out += `<button class="copyBtnSmall" onclick="copyPatternOnly('${r.pattern}')">コピー</button>`;
+        out += `</div><br>`;
     }
 
-    document.getElementById("result-generator").textContent = out;
+    document.getElementById("result-generator").innerHTML = out;
 }
 
 /* ============================
-   コピー機能
+   コピー機能（パターンだけ）
 ============================ */
-function copyOne(){
-    const txt = document.getElementById("result-generator").textContent.trim();
-    const first = txt.split("\n\n")[0];
-    navigator.clipboard.writeText(first);
+function copyPatternOnly(pattern){
+    navigator.clipboard.writeText(pattern);
 }
 
 function copyAll(){
-    const txt = document.getElementById("result-generator").textContent.trim();
+    const txt = document.getElementById("result-generator").innerText.trim();
     navigator.clipboard.writeText(txt);
 }
 
 function copySome(){
     const n = prompt("何件コピーしますか？");
     if(!n) return;
-    const txt = document.getElementById("result-generator").textContent.trim();
-    const blocks = txt.split("\n\n");
-    const pick = blocks.slice(0, Number(n)).join("\n\n");
-    navigator.clipboard.writeText(pick);
+    const txt = document.getElementById("result-generator").innerText.trim();
+    const blocks = txt.split("コピー").slice(0, Number(n));
+    navigator.clipboard.writeText(blocks.join("\n\n"));
 }
 
 /* ============================
