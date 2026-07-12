@@ -184,6 +184,9 @@ button {
 </div>
 
 <!-- ============================
+   出題モード画面（Part2へ続く）
+============================ -->
+<!-- ============================
    出題モード画面
 ============================ -->
 <div id="screen-generator" class="screen">
@@ -221,7 +224,7 @@ button {
 
     <label style="margin-top:10px;">ソート</label>
     <select id="genSort">
-        <option value="kana">50音順</option>
+        <option value="kana">50音順（抽出）</option>
         <option value="random">ランダム</option>
     </select>
 
@@ -242,14 +245,15 @@ button {
         <label for="genNormalizeDakuten">濁点・小文字を同一視</label>
     </div>
 
+    <!-- 全件コピー・件数コピーを出題するの真上に -->
+    <div id="copyArea" style="margin-top:14px; font-size:16px; color:#007aff;">
+        <span class="copyLink" onclick="copyAllPatterns()">全部コピー</span>
+        <span class="copyLink" onclick="copySomePatterns()">件数コピー</span>
+    </div>
+
     <button onclick="runGenerate()">出題する</button>
 
     <div id="result-generator"></div>
-
-    <div id="copyArea" style="margin-top:10px; font-size:16px; color:#007aff;">
-        <span class="copyLink" onclick="copyAll()">全部コピー</span>
-        <span class="copyLink" onclick="copySome()">件数指定コピー</span>
-    </div>
 </div>
 
 <script src="dictionary.js"></script>
@@ -277,31 +281,12 @@ document.getElementById("tab-generator").onclick = () => {
 ============================ */
 function normalizeDakutenSmall(str) {
     const map = {
-        "ァ":"ア","ア":"ア",
-        "ィ":"イ","イ":"イ",
-        "ゥ":"ウ","ウ":"ウ",
-        "ェ":"エ","エ":"エ",
-        "ォ":"オ","オ":"オ",
-        "ガ":"カ","カ":"カ",
-        "ギ":"キ","キ":"キ",
-        "グ":"ク","ク":"ク",
-        "ゲ":"ケ","ケ":"ケ",
-        "ゴ":"コ","コ":"コ",
-        "ザ":"サ","サ":"サ",
-        "ジ":"シ","シ":"シ",
-        "ズ":"ス","ス":"ス",
-        "ゼ":"セ","セ":"セ",
-        "ゾ":"ソ","ソ":"ソ",
-        "ダ":"タ","タ":"タ",
-        "ヂ":"チ","チ":"チ",
-        "ヅ":"ツ","ツ":"ツ",
-        "デ":"テ","テ":"テ",
-        "ド":"ト","ト":"ト",
-        "バ":"ハ","パ":"ハ","ハ":"ハ",
-        "ビ":"ヒ","ピ":"ヒ","ヒ":"ヒ",
-        "ブ":"フ","プ":"フ","フ":"フ",
-        "ベ":"ヘ","ペ":"ヘ","ヘ":"ヘ",
-        "ボ":"ホ","ポ":"ホ","ホ":"ホ"
+        "ァ":"ア","ア":"ア","ィ":"イ","イ":"イ","ゥ":"ウ","ウ":"ウ","ェ":"エ","エ":"エ","ォ":"オ","オ":"オ",
+        "ガ":"カ","カ":"カ","ギ":"キ","キ":"キ","グ":"ク","ク":"ク","ゲ":"ケ","ケ":"ケ","ゴ":"コ","コ":"コ",
+        "ザ":"サ","サ":"サ","ジ":"シ","シ":"シ","ズ":"ス","ス":"ス","ゼ":"セ","セ":"セ","ゾ":"ソ","ソ":"ソ",
+        "ダ":"タ","タ":"タ","ヂ":"チ","チ":"チ","ヅ":"ツ","ツ":"ツ","デ":"テ","テ":"テ","ド":"ト","ト":"ト",
+        "バ":"ハ","パ":"ハ","ハ":"ハ","ビ":"ヒ","ピ":"ヒ","ヒ":"ヒ","ブ":"フ","プ":"フ","フ":"フ",
+        "ベ":"ヘ","ペ":"ヘ","ヘ":"ヘ","ボ":"ホ","ポ":"ホ","ホ":"ホ"
     };
     let out = "";
     for (const ch of str) out += map[ch] || ch;
@@ -309,7 +294,7 @@ function normalizeDakutenSmall(str) {
 }
 
 /* ============================
-   入力正規化
+   入力正規化（〇①②…）
 ============================ */
 function normalizeInput(str) {
     str = str.replace(/○/g, "〇");
@@ -371,41 +356,7 @@ function generateShiritoriChains(list, maxLength=4){
 }
 
 /* ============================
-   ソルバー
-============================ */
-function solvePattern(inputPattern, shiritoriMode, dictMode, useDakutenMode){
-    const pattern = normalizeInput(inputPattern);
-
-    let list=[];
-    if(dictMode==="country") list=window.DICT.country;
-    if(dictMode==="capital") list=window.DICT.capital;
-    if(dictMode==="both") list=[...window.DICT.country,...window.DICT.capital];
-
-    let candidates=[];
-
-    if(shiritoriMode){
-        const chains=generateShiritoriChains(list,4);
-        for(const chain of chains){
-            let joined = chain.join("");
-            if(useDakutenMode) joined = normalizeDakutenSmall(joined);
-            if(joined.length===pattern.length && matchPattern(pattern,joined,useDakutenMode)){
-                candidates.push(chain);
-            }
-        }
-    } else {
-        for(const w of list){
-            let ww = w;
-            if(useDakutenMode) ww = normalizeDakutenSmall(ww);
-            if(matchPattern(pattern,ww,useDakutenMode)){
-                candidates.push([w]);
-            }
-        }
-    }
-    return candidates;
-}
-
-/* ============================
-   抽象化（出現回数ベース）
+   抽象化（〇①②…）
 ============================ */
 function abstractWordByFrequency(word, useDakutenMode){
     let base = word;
@@ -430,7 +381,7 @@ function abstractWordByFrequency(word, useDakutenMode){
 }
 
 /* ============================
-   出題モード
+   出題モード本体
 ============================ */
 function runGenerate(){
     const lenMode = document.getElementById("genLenMode").value;
@@ -491,15 +442,30 @@ function runGenerate(){
                 pattern,
                 count: cnt,
                 chain: obj.chain,
-                example
+                example,
+                firstWord: obj.chain[0]  // 50音順抽出用
             });
         }
     }
 
-        /* ソート */
+    /* ============================
+       ソート仕様（あなたの要望）
+    ============================ */
+
     if(sortMode === "kana"){
-        results.sort((a,b)=> a.pattern.localeCompare(b.pattern, "ja"));
+        // 1. 連結語の先頭語を50音順比較
+        let sortedByKana = [...results].sort((a,b)=> a.firstWord.localeCompare(b.firstWord,"ja"));
+
+        // 2. 最も前に来る語を抽出
+        const topWord = sortedByKana[0].firstWord;
+
+        // 3. その語を持つカードだけ抽出
+        results = results.filter(r => r.firstWord === topWord);
+
+        // 4. パターンでソート
+        results.sort((a,b)=> a.pattern.localeCompare(b.pattern,"ja"));
     }
+
     if(sortMode === "random"){
         results.sort(()=> Math.random() - 0.5);
     }
@@ -533,17 +499,26 @@ function copyPatternOnly(pattern){
     navigator.clipboard.writeText(pattern);
 }
 
-function copyAll(){
-    const txt = document.getElementById("result-generator").innerText.trim();
-    navigator.clipboard.writeText(txt);
+function copyAllPatterns(){
+    const cards = document.querySelectorAll(".resultCard");
+    const patterns = [...cards].map(card=>{
+        const text = card.innerText.split("\n")[0].replace("【問題】","");
+        return text.trim();
+    });
+    navigator.clipboard.writeText(patterns.join("\n"));
 }
 
-function copySome(){
+function copySomePatterns(){
     const n = prompt("何件コピーしますか？");
     if(!n) return;
-    const txt = document.getElementById("result-generator").innerText.trim();
-    const blocks = txt.split("コピー").slice(0, Number(n));
-    navigator.clipboard.writeText(blocks.join("\n\n"));
+
+    const cards = document.querySelectorAll(".resultCard");
+    const patterns = [...cards].slice(0, Number(n)).map(card=>{
+        const text = card.innerText.split("\n")[0].replace("【問題】","");
+        return text.trim();
+    });
+
+    navigator.clipboard.writeText(patterns.join("\n"));
 }
 
 /* ============================
