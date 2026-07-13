@@ -4,65 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>UltraEngine風 スプリントシャウト</title>
+<title>UltraEngine風 ソルバー</title>
 
 <style>
-html, body { touch-action: manipulation; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    padding: 20px;
     background: #fafafa;
-    color: #333;
+    padding: 20px;
     max-width: 600px;
     margin: auto;
-}
-
-/* ============================
-   UltraEngine風 タブ
-============================ */
-#tabs {
-    display: flex;
-    border-bottom: 2px solid #007aff;
-    margin-bottom: 10px;
-}
-
-.tab {
-    flex: 1;
-    text-align: center;
-    padding: 12px 0;
-    font-size: 20px;
-    background: #e5e5e5;
     color: #333;
-    cursor: pointer;
-    user-select: none;
 }
 
-.tab.active {
-    background: #007aff;
-    color: white;
-    font-weight: bold;
-}
-
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* ============================
-   UltraEngine風 入力欄
-============================ */
-input[type="text"], input[type="number"], select {
+/* 入力欄 */
+input[type="text"], select {
     width: 100%;
     font-size: 20px;
     padding: 10px;
     border-radius: 6px;
     border: 1px solid #ccc;
     background: #f9f9f9;
-    box-sizing: border-box;
     margin-top: 10px;
 }
 
-/* ============================
-   UltraEngine風 チェックボックス
-============================ */
+/* チェックボックス */
 input[type="checkbox"] {
     width: 24px;
     height: 24px;
@@ -70,9 +35,7 @@ input[type="checkbox"] {
     margin-right: 6px;
 }
 
-/* ============================
-   UltraEngine風 ボタン
-============================ */
+/* ボタン */
 button {
     width: 100%;
     padding: 14px;
@@ -84,15 +47,12 @@ button {
     margin-top: 14px;
 }
 
-/* ============================
-   UltraEngine風 辞書選択
-============================ */
+/* 辞書選択 */
 .dict-select {
     display: flex;
     gap: 10px;
     margin-top: 10px;
 }
-
 .dict-option {
     flex: 1;
     background: #f9f9f9;
@@ -101,15 +61,12 @@ button {
     text-align: center;
     border: 1px solid #ccc;
 }
-
 .dict-option.selected {
     border-color: #007aff;
     background: #e8f0ff;
 }
 
-/* ============================
-   UltraEngine風 結果カード
-============================ */
+/* 結果カード */
 .resultCard {
     background: #fff;
     border: 1px solid #d0d0d0;
@@ -117,9 +74,7 @@ button {
     padding: 12px;
     margin-top: 14px;
     font-size: 18px;
-    line-height: 1.35;
 }
-
 .copyBtnSmall {
     background: #007aff;
     color: white;
@@ -129,153 +84,43 @@ button {
     font-size: 16px;
     margin-top: 10px;
 }
-
-.copyLink {
-    color:#007aff;
-    cursor:pointer;
-    margin-right:12px;
-}
 </style>
 </head>
 <body>
 
-<!-- ============================
-   タブ
-============================ -->
-<div id="tabs">
-    <div id="tab-solver" class="tab active">ソルバー</div>
-    <div id="tab-generator" class="tab">出題モード</div>
+<h2>ソルバー</h2>
+
+<input id="pattern" type="text" placeholder="例：〇①〇〇②">
+
+<div class="dict-select">
+    <label class="dict-option selected" id="opt-country">
+        <input type="radio" name="dict" value="country" checked> 国名
+    </label>
+    <label class="dict-option" id="opt-capital">
+        <input type="radio" name="dict" value="capital"> 首都
+    </label>
+    <label class="dict-option" id="opt-both">
+        <input type="radio" name="dict" value="both"> 両方
+    </label>
 </div>
 
-<!-- ============================
-   ソルバー画面
-============================ -->
-<div id="screen-solver" class="screen active">
-
-    <h3>ソルバー</h3>
-
-    <input id="pattern" type="text" placeholder="例：〇①〇〇②">
-
-    <div class="dict-select">
-        <label class="dict-option selected" id="opt-country">
-            <input type="radio" name="dict" value="country" checked> 国名
-        </label>
-        <label class="dict-option" id="opt-capital">
-            <input type="radio" name="dict" value="capital"> 首都
-        </label>
-        <label class="dict-option" id="opt-both">
-            <input type="radio" name="dict" value="both"> 両方
-        </label>
-    </div>
-
-    <div style="margin-top:10px;">
-        <input type="checkbox" id="shiritori">
-        <label for="shiritori">しりとりモード</label>
-    </div>
-
-    <div style="margin-top:10px;">
-        <input type="checkbox" id="normalizeDakuten">
-        <label for="normalizeDakuten">濁点・小文字を同一視</label>
-    </div>
-
-    <button onclick="runSolve()">解く</button>
-
-    <pre id="result-solver">ここに結果が表示されます</pre>
+<div style="margin-top:10px;">
+    <input type="checkbox" id="shiritori">
+    <label for="shiritori">しりとりモード</label>
 </div>
 
-<!-- ============================
-   出題モード画面（Part2へ続く）
-============================ -->
-<!-- ============================
-   出題モード画面
-============================ -->
-<div id="screen-generator" class="screen">
-
-    <h3>出題モード（抽象化方式）</h3>
-
-    <label>しりとり連結語の長さ</label>
-    <select id="genLenMode">
-        <option value="eq">= N</option>
-        <option value="ge">≥ N</option>
-        <option value="le">≤ N</option>
-    </select>
-
-    N = <input id="genLenN" type="number" value="10" min="2" style="width:80px;">
-
-    <div style="height:12px;"></div>
-
-    <label style="margin-top:10px;">解の通り数</label>
-    <select id="genCond">
-        <option value="eq">= M</option>
-        <option value="ge">≥ M</option>
-        <option value="le">≤ M</option>
-    </select>
-
-    M = <input id="genCondN" type="number" value="1" min="1" style="width:80px;">
-
-    <div style="height:12px;"></div>
-
-    <label style="margin-top:10px;">例の表示</label>
-    <select id="genExampleMode">
-        <option value="none">なし</option>
-        <option value="one">1つだけ</option>
-        <option value="all">すべて</option>
-    </select>
-
-    <label style="margin-top:10px;">ソート</label>
-    <select id="genSort">
-        <option value="kana">50音順（抽出）</option>
-        <option value="random">ランダム</option>
-    </select>
-
-    <div class="dict-select">
-        <label class="dict-option selected" id="opt-country2">
-            <input type="radio" name="dict2" value="country" checked> 国名
-        </label>
-        <label class="dict-option" id="opt-capital2">
-            <input type="radio" name="dict2" value="capital"> 首都
-        </label>
-        <label class="dict-option" id="opt-both2">
-            <input type="radio" name="dict2" value="both"> 両方
-        </label>
-    </div>
-
-    <div style="margin-top:10px;">
-        <input type="checkbox" id="genNormalizeDakuten">
-        <label for="genNormalizeDakuten">濁点・小文字を同一視</label>
-    </div>
-
-    <!-- 全件コピー・件数コピーを出題するの真上に -->
-    <div id="copyArea" style="margin-top:14px; font-size:16px; color:#007aff;">
-        <span class="copyLink" onclick="copyAllPatterns()">全部コピー</span>
-        <span class="copyLink" onclick="copySomePatterns()">件数コピー</span>
-    </div>
-
-    <button onclick="runGenerate()">出題する</button>
-
-    <div id="result-generator"></div>
+<div style="margin-top:10px;">
+    <input type="checkbox" id="normalizeDakuten">
+    <label for="normalizeDakuten">濁点・小文字を同一視</label>
 </div>
+
+<button onclick="runSolve()">解く</button>
+
+<div id="result"></div>
 
 <script src="dictionary.js"></script>
 
 <script>
-/* ============================
-   タブ切り替え
-============================ */
-document.getElementById("tab-solver").onclick = () => {
-    document.getElementById("tab-solver").classList.add("active");
-    document.getElementById("tab-generator").classList.remove("active");
-    document.getElementById("screen-solver").classList.add("active");
-    document.getElementById("screen-generator").classList.remove("active");
-};
-
-document.getElementById("tab-generator").onclick = () => {
-    document.getElementById("tab-generator").classList.add("active");
-    document.getElementById("tab-solver").classList.remove("active");
-    document.getElementById("screen-generator").classList.add("active");
-    document.getElementById("screen-solver").classList.remove("active");
-};
-
 /* ============================
    濁点・小文字同一視
 ============================ */
@@ -294,13 +139,12 @@ function normalizeDakutenSmall(str) {
 }
 
 /* ============================
-   入力正規化（〇①②…）
+   入力正規化（〇①②→数字）
 ============================ */
 function normalizeInput(str) {
     str = str.replace(/○/g, "〇");
     const circled = { "①":"1","②":"2","③":"3","④":"4","⑤":"5","⑥":"6","⑦":"7","⑧":"8","⑨":"9" };
-    str = str.replace(/[①②③④⑤⑥⑦⑧⑨]/g, ch => circled[ch]);
-    return str;
+    return str.replace(/[①②③④⑤⑥⑦⑧⑨]/g, ch => circled[ch]);
 }
 
 /* ============================
@@ -356,192 +200,59 @@ function generateShiritoriChains(list, maxLength=4){
 }
 
 /* ============================
-   抽象化（〇①②…）
+   ソルバー本体
 ============================ */
-function abstractWordByFrequency(word, useDakutenMode){
-    let base = word;
-    if(useDakutenMode) base = normalizeDakutenSmall(base);
-
-    const freq = {};
-    for(const ch of base) freq[ch] = (freq[ch] || 0) + 1;
-
-    const labelMap = {};
-    let nextLabel = 1;
-
-    let result = "";
-    for(const ch of base){
-        if(freq[ch] >= 2){
-            if(!labelMap[ch]) labelMap[ch] = String(nextLabel++);
-            result += labelMap[ch];
-        } else {
-            result += "〇";
-        }
-    }
-    return result;
-}
-
-/* ============================
-   出題モード本体
-============================ */
-function runGenerate(){
-    const lenMode = document.getElementById("genLenMode").value;
-    const lenN = Number(document.getElementById("genLenN").value);
-    const cond = document.getElementById("genCond").value;
-    const condN = Number(document.getElementById("genCondN").value);
-    const dictMode = document.querySelector("input[name=dict2]:checked").value;
-    const useDakutenMode = document.getElementById("genNormalizeDakuten").checked;
-    const exampleMode = document.getElementById("genExampleMode").value;
-    const sortMode = document.getElementById("genSort").value;
+function runSolve(){
+    const pattern = normalizeInput(document.getElementById("pattern").value);
+    const dictMode = document.querySelector("input[name=dict]:checked").value;
+    const shiritoriMode = document.getElementById("shiritori").checked;
+    const useDakutenMode = document.getElementById("normalizeDakuten").checked;
 
     let list=[];
     if(dictMode==="country") list=window.DICT.country;
     if(dictMode==="capital") list=window.DICT.capital;
     if(dictMode==="both") list=[...window.DICT.country,...window.DICT.capital];
 
-    const chains = generateShiritoriChains(list,4);
+    let results=[];
 
-    let baseWords = [];
-    for(const chain of chains){
-        let joined = chain.join("");
-        let normalizedJoined = useDakutenMode ? normalizeDakutenSmall(joined) : joined;
-        const L = normalizedJoined.length;
-
-        let okLen = false;
-        if(lenMode==="eq" && L===lenN) okLen=true;
-        if(lenMode==="ge" && L>=lenN) okLen=true;
-        if(lenMode==="le" && L<=lenN) okLen=true;
-
-        if(okLen){
-            baseWords.push({chain, joined: normalizedJoined});
+    if(shiritoriMode){
+        const chains = generateShiritoriChains(list,4);
+        for(const chain of chains){
+            let joined = chain.join("");
+            let normalizedJoined = useDakutenMode ? normalizeDakutenSmall(joined) : joined;
+            if(matchPattern(pattern, normalizedJoined, useDakutenMode)){
+                results.push(chain);
+            }
+        }
+    } else {
+        for(const w of list){
+            let ww = useDakutenMode ? normalizeDakutenSmall(w) : w;
+            if(matchPattern(pattern, ww, useDakutenMode)){
+                results.push([w]);
+            }
         }
     }
 
-    let results = [];
-
-    for(const obj of baseWords){
-        const pattern = abstractWordByFrequency(obj.joined, useDakutenMode);
-
-        const sols = solvePattern(pattern, true, dictMode, useDakutenMode);
-        const cnt = sols.length;
-
-        let ok=false;
-        if(cond==="eq" && cnt===condN) ok=true;
-        if(cond==="ge" && cnt>=condN) ok=true;
-        if(cond==="le" && cnt<=condN) ok=true;
-
-        if(ok){
-            let example="";
-            if(exampleMode==="one" && sols.length>0){
-                example = sols[0].join(" → ");
-            }
-            if(exampleMode==="all"){
-                example = sols.map(s=>s.join(" → ")).join("\n");
-            }
-
-            results.push({
-                pattern,
-                count: cnt,
-                chain: obj.chain,
-                example,
-                firstWord: obj.chain[0]  // 50音順抽出用
-            });
-        }
-    }
-
-    /* ============================
-       ソート仕様（あなたの要望）
-    ============================ */
-
-    if(sortMode === "kana"){
-        // 1. 連結語の先頭語を50音順比較
-        let sortedByKana = [...results].sort((a,b)=> a.firstWord.localeCompare(b.firstWord,"ja"));
-
-        // 2. 最も前に来る語を抽出
-        const topWord = sortedByKana[0].firstWord;
-
-        // 3. その語を持つカードだけ抽出
-        results = results.filter(r => r.firstWord === topWord);
-
-        // 4. パターンでソート
-        results.sort((a,b)=> a.pattern.localeCompare(b.pattern,"ja"));
-    }
-
-    if(sortMode === "random"){
-        results.sort(()=> Math.random() - 0.5);
-    }
+    const area = document.getElementById("result");
+    area.innerHTML = "";
 
     if(results.length===0){
-        document.getElementById("result-generator").innerHTML="該当なし";
+        area.innerHTML = "一致なし";
         return;
     }
 
-    let out = `=== ${results.length} 件の問題を表示中 ===<br><br>`;
+    area.innerHTML = `=== ${results.length} 件一致 ===<br><br>`;
 
-    for(const r of results){
-        out += `<div class="resultCard">`;
-        out += `【問題】${r.pattern}<br>`;
-        out += `連結語：${r.chain.join(" → ")}<br>`;
-        out += `解の数：${r.count}<br>`;
-        if(r.example){
-            out += `例：<br>${r.example.replace(/\n/g,"<br>")}<br>`;
-        }
-        out += `<button class="copyBtnSmall" onclick="copyPatternOnly('${r.pattern}')">コピー</button>`;
-        out += `</div><br>`;
+    for(const chain of results){
+        const text = chain.join(" → ");
+        const card = `
+            <div class="resultCard">
+                ${text}<br>
+                <button class="copyBtnSmall" onclick="navigator.clipboard.writeText('${text}')">コピー</button>
+            </div>
+        `;
+        area.innerHTML += card;
     }
-
-    document.getElementById("result-generator").innerHTML = out;
-}
-
-/* ============================
-   コピー機能（パターンだけ）
-============================ */
-function copyPatternOnly(pattern){
-    navigator.clipboard.writeText(pattern);
-}
-
-function copyAllPatterns(){
-    const cards = document.querySelectorAll(".resultCard");
-    const patterns = [...cards].map(card=>{
-        const text = card.innerText.split("\n")[0].replace("【問題】","");
-        return text.trim();
-    });
-    navigator.clipboard.writeText(patterns.join("\n"));
-}
-
-function copySomePatterns(){
-    const n = prompt("何件コピーしますか？");
-    if(!n) return;
-
-    const cards = document.querySelectorAll(".resultCard");
-    const patterns = [...cards].slice(0, Number(n)).map(card=>{
-        const text = card.innerText.split("\n")[0].replace("【問題】","");
-        return text.trim();
-    });
-
-    navigator.clipboard.writeText(patterns.join("\n"));
-}
-
-/* ============================
-   ソルバー UI
-============================ */
-function runSolve(){
-    const p=document.getElementById("pattern").value;
-    const s=document.getElementById("shiritori").checked;
-    const dictMode=document.querySelector("input[name=dict]:checked").value;
-    const useDakutenMode = document.getElementById("normalizeDakuten").checked;
-
-    const res=solvePattern(p,s,dictMode,useDakutenMode);
-
-    if(res.length===0){
-        document.getElementById("result-solver").textContent="一致なし";
-        return;
-    }
-
-    let out="";
-    for(const chain of res){
-        out += chain.join(" → ") + "\n";
-    }
-    document.getElementById("result-solver").textContent=out;
 }
 
 /* ============================
